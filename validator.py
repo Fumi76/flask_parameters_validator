@@ -38,7 +38,7 @@ class RequestParamsValidator:
         # src == json_bodyがある場合
         is_json_body = False
         is_json_body_required = False
-        for item in spec:
+        for item in self.spec:
             if is_json_body_required:
                 break
             if item['src'] == 'json_body':
@@ -68,7 +68,7 @@ class RequestParamsValidator:
         indexed_params = []
         indexed_params_validation = []
 
-        for item in spec:
+        for item in self.spec:
 
             if 'type' in item and item['type'] == 'required_params_in_same_index':
                 indexed_params_validation.append(item)
@@ -409,24 +409,25 @@ class RequestParamsValidator:
             elif not type(param_value) is str:
                 errors.append(param_name + " 文字列を指定してください")
                 is_error = True
-
-            if 'min' in item and len(param_value) < item['min']:
-                errors.append(param_name + " 長さの下限を下回っています" + str(item['min']))
-                is_error = True
-            if 'max' in item and len(param_value) > item['max']:
-                errors.append(param_name + " 長さの上限を上回っています" + str(item['max']))
-                is_error = True
+            elif len(param_value.strip()) > 0:
+                if 'min' in item and len(param_value) < item['min']:
+                    errors.append(param_name + " 長さの下限を下回っています" + str(item['min']))
+                    is_error = True
+                elif 'max' in item and len(param_value) > item['max']:
+                    errors.append(param_name + " 長さの上限を上回っています" + str(item['max']))
+                    is_error = True
 
         # アップロードファイルのチェック
         elif item['type'] == 'file':
 
             if is_required and (param_value is None or len(param_value.strip()) == 0):
-                errors.append(param_name + "の指定は必須です。")
+                errors.append(param_name + " ファイルがアップロードされていません")
                 is_error = True
 
-            # TODO
+            # TODO 拡張子チェック、サイズチェック（０より大きい）、PDFファイルのメタ情報チェックなど(これはカスタムチェックぽい)
             # file = request.files['my_file']
             # ローカルに保存、システムで安全な別名を付けた方が良い
+            # ローカルの保存パスをセットして返す
             # file.save('/tmp/', "tmp")
             # ファイルサイズ
             # print(os.stat(file.stream._file.name).st_size)
@@ -470,7 +471,10 @@ if __name__ == '__main__':
         },
         {'type': 'required_params_in_same_index'
         , 'param_names': ['alpha', 'beta']
-        }
+        },
+        {'param_name': 'my_doc', 'src': 'form', 'required': True
+         , 'type': 'file'
+        },
         ]
     # パラメータごとではなく、チェックの種類を起点にしたほうがよい？
     # いや、単項目チェックではパラメータごとか？

@@ -1,6 +1,52 @@
-from flask import Flask, request
+from flask import Flask, request, make_response
+from validator import RequestParamsValidator
+import json
 
 app = Flask(__name__, static_url_path='/static')
+
+spec = [{'param_name': 'hoge', 'src': 'form', 'required': True
+             , 'type': 'integer', 'min_value': 0, 'max_value': 500
+        }, {'param_name': 'foo', 'src': 'query', 'required': True
+             , 'type': 'str', 'max': 5, 'min': 5
+        }, {'param_name': 'key4', 'src': 'form', 'required': True
+             , 'type': 'float', 'precision': 3, 'min_value': "0.001", 'max_value': '99.999'
+        }, {'param_name': 'key5', 'src': 'json_body', 'required': True
+             , 'type': 'integer', 'min_value': 0, 'max_value': 500
+        }, {'param_name': 'key6', 'src': 'json_body', 'required': True
+            # type を指定していないがrequired=Trueもありうる
+        }, {'param_name': 'key7', 'src': 'json_body', 'required': True
+            , 'type': 'float', 'precision': 3, 'min_value': "0.001", 'max_value': '99.999', 'convert_str': True
+        }, {'param_name': 'key8', 'src': 'json_body'
+            , 'type': 'str', 'max': 5, 'min': 5
+        }, {'param_name': 'key9', 'src': 'form', 'indexed': True, 'required': True
+            , 'type': 'integer', 'min_value': 0, 'max_value': 500
+        }, {'param_name': 'key10', 'src': 'json_body', 'indexed': True
+            , 'type': 'float', 'min_value': "0.001", 'max_value': "100"
+        }, {'param_name': 'alpha', 'src': 'form', 'indexed': True
+        },
+        {'param_name': 'beta', 'src': 'form', 'indexed': True
+        },
+        {'type': 'required_params_in_same_index'
+        , 'param_names': ['alpha', 'beta']
+        },
+        {'param_name': 'my_doc', 'src': 'form', 'required': True
+         , 'type': 'file'
+        },
+        ]
+
+validator = RequestParamsValidator(spec)
+
+
+@app.route('/test', methods=['POST'])
+def test():
+    result = validator.validate(request)
+    print("Errors")
+    print(result[0])
+    print("Type Converted Input params")
+    print(vars(result[1]))
+    response = make_response(json.dumps(result[0], ensure_ascii=False))
+    response.headers['Content-Type'] = 'application/json; charset=UTF-8'
+    return response, 200
 
 
 @app.route('/query_params')
@@ -69,8 +115,8 @@ def upload_file():
 # ファイルはrequest.filesからしか取得できない
 
 
-@app.route('/json', methods=['POST'])
-def json():
+@app.route('/json_body', methods=['POST'])
+def json_body():
     # ちなみに不正なJSONを送るとこの手前で400が返る（エラーメッセージ付き）
     j = request.json # つまり、これはすでにパースできた後
     # 自前でパースするなら以下
