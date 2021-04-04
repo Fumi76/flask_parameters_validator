@@ -480,7 +480,8 @@ if __name__ == '__main__':
     # いや、単項目チェックではパラメータごとか？
     # 相関チェックはチェックの種類が起点のほうがよい
     # どっちもできたほうが柔軟性が上？あまり差がないか？
-    # パラメータごとの方が検証をどこでやめればよいかが明確、チェックの種類ごとだとパラメータごとのエラー状況を保持しておく必要あり
+    # パラメータごとの方が検証をどこでやめればよいかが明確だが、
+    # チェックの種類ごとだとパラメータごとのエラー状況を保持しておく必要あり
 
     input_request = MockRequest()
 
@@ -492,6 +493,7 @@ if __name__ == '__main__':
     input_request.data = b'{"key5": 1.000, "key6": "abc", "key7": 99.999, "key8": "12345", "key10[1]": 1}'
 
     validator = RequestParamsValidator(spec)
+    # TODO カスタム検証タイプを追加、specで指定して検証実行（設計を考える）
     result = validator.validate(input_request)
     print("Errors")
     print(result[0])
